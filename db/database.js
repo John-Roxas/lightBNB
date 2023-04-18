@@ -1,5 +1,12 @@
 const properties = require("./json/properties.json");
 const users = require("./json/users.json");
+const { Pool } = require("pg");
+const pool = new Pool({
+  user: "labber",
+  password: "123",
+  host: "localhost",
+  database: "lightbnb",
+});
 
 /// Users
 
@@ -9,14 +16,30 @@ const users = require("./json/users.json");
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
-  let resolvedUser = null;
-  for (const userId in users) {
-    const user = users[userId];
-    if (user?.email.toLowerCase() === email?.toLowerCase()) {
-      resolvedUser = user;
-    }
-  }
-  return Promise.resolve(resolvedUser);
+  let user = null;
+
+  return new Promise((resolve, reject) => {
+    pool
+      // Query to retrieve the user's email and password from the users database.
+      .query(`SELECT * FROM users WHERE email = $1`, [email])
+      .then((response) => {
+        // This outputs an ARRAY. Need to specify that we want only the 1st entry, even if we only have ONE result.
+        user = response.rows[0];
+        if (user !== null) {
+          resolve(user);
+        } else {
+          // If the user is not found. reject and throw null!
+          reject(new Error(null));
+        }
+      })
+
+      // The catch block in the getUserWithEmail function is used to catch any errors that may occur during the execution of the query and reject
+      // the promise with the error. This ensures that any errors that occur during the execution of the query are handled properly and not left unhandled,
+      // which can cause unexpected behavior in your application.
+      .catch((error) => {
+        reject(error);
+      });
+  });
 };
 
 /**
@@ -25,7 +48,30 @@ const getUserWithEmail = function (email) {
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function (id) {
-  return Promise.resolve(users[id]);
+  let user = null;
+
+  return new Promise((resolve, reject) => {
+    pool
+      // Query to retrieve the user's email and password from the users database.
+      .query(`SELECT * FROM users WHERE id = $1`, [id])
+      .then((response) => {
+        // This outputs an ARRAY. Need to specify that we want only the 1st entry, even if we only have ONE result.
+        user = response.rows[0];
+        if (user !== null) {
+          resolve(user);
+        } else {
+          // If the user is not found. reject and throw null!
+          reject(new Error(null));
+        }
+      })
+
+      // The catch block in the getUserWithEmail function is used to catch any errors that may occur during the execution of the query and reject
+      // the promise with the error. This ensures that any errors that occur during the execution of the query are handled properly and not left unhandled,
+      // which can cause unexpected behavior in your application.
+      .catch((error) => {
+        reject(error);
+      });
+  });
 };
 
 /**
@@ -60,13 +106,26 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-  const limitedProperties = {};
-  for (let i = 1; i <= limit; i++) {
-    limitedProperties[i] = properties[i];
-  }
-  return Promise.resolve(limitedProperties);
+  return pool
+    .query(
+      `SELECT *
+      FROM properties
+      LIMIT $1;`,
+      [limit]
+    )
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+  // const limitedProperties = {};
+  // for (let i = 1; i <= limit; i++) {
+  // limitedProperties[i] = properties[i];
+  // }
+  // return Promise.resolve(limitedProperties);
 };
-
+// getAllProperties();
 /**
  * Add a property to the database
  * @param {{}} property An object containing all of the property details.
