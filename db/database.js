@@ -89,7 +89,12 @@ const addUser = function (user) {
         user.password,
       ])
       .then((response) => {
+        pool.end(); // close the connection
         resolve();
+      })
+      .then((response) => {
+        pool.end(); // Close the connection even if there's an error!
+        reject(error);
       });
   });
 
@@ -107,6 +112,18 @@ const addUser = function (user) {
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
+  return new Promise((resolve, reject) => {
+    let userReservations = null;
+    pool
+      .query(`SELECT * FROM reservations WHERE guest_id = $1 LIMIT $2`, [
+        guest_id,
+        limit,
+      ])
+      .then((response) => {
+        userReservations = response.rows;
+        resolve(userReservations);
+      });
+  });
   return getAllProperties(null, 2);
 };
 
