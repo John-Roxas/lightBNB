@@ -1,5 +1,5 @@
 # LightBnB
-
+A simple multi-page AirBNB clone that uses server-side Javascipt to display the information from queries to web pages via SQL queries.
 ## Project Structure
 
 ```
